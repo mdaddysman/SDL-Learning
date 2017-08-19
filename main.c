@@ -85,7 +85,7 @@ int main(int argc, char* args[])
 			break;
 		}
 		SDL_UpdateWindowSurface(window);
-		SDL_Delay(200);
+		//SDL_Delay(50);
 		while (SDL_PollEvent(&e) != 0)
 		{
 			if (e.type == SDL_QUIT)
