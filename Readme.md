@@ -11,4 +11,6 @@ The following dll's must be copied to the Debug folder:
 - `SDL2_mixer.dll`
 - `smpeg2.dll`
 
-Resource: `Music/Game1.mp3`
+Resources: 
+- `Music/Game1.mp3`
+- `Sounds/fail.wav`
