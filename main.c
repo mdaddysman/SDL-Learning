@@ -15,7 +15,11 @@ const int PLAYAREA_BORDER = 6;
 static const char *GAME_MUSIC = "Music/Game1.mp3";
 static const char *WALL_SOUND = "Sounds/fail.wav";
 
-enum BoxColors {BLACK = 0, WHITE, RED, BLUE, ORANGE};
+enum BoxColors {BLACK = 0, WHITE, RED, BLUE, ORANGE, GREEN};
+
+const int MAX_BOOST = 200; 
+const int BOOST_DOWN = 3;
+const int BOOST_RECHARGE = 1;
 
 void DrawBox(SDL_Renderer *r, SDL_Rect *box, enum BoxColors color); 
 SDL_Texture* makeTextTexture(SDL_Renderer *r, TTF_Font *font, const char *text, SDL_Color fg, SDL_Color bg);
@@ -28,13 +32,31 @@ int main(int argc, char* args[])
 	Mix_Chunk *wall = NULL;
 	TTF_Font *font = NULL;
 	SDL_Texture *tlevel_number = NULL;
+	SDL_Texture *thit_points = NULL;
+	SDL_Texture *tboost = NULL;
+	char buffer[100];
 	int quit = 0;
 	int result = 0;
 	short int isedgehit = 0;
+	int level = 1; 
+	int hit_points = 3;
+	int boost_pool = MAX_BOOST;
 	SDL_Event e;
 	enum BoxColors playercolor = WHITE;
 	time_t t;
 	SDL_Rect playerbox = {
+		200,
+		200,
+		10,
+		10,
+	};
+	SDL_Rect goalbox = {
+		200,
+		200,
+		10,
+		10,
+	};
+	SDL_Rect enemybox = {
 		200,
 		200,
 		10,
@@ -56,7 +78,7 @@ int main(int argc, char* args[])
 	int movespeed = 1; //pixels moved per frame 
 	SDL_Color text_color = { 255, 255, 255 };
 	SDL_Color bg_color = { 0, 0, 0 };
-	SDL_Rect level_rect;
+	SDL_Rect level_rect, hitpoints_rect, boost_rect, boostmeter_rect, boostdeplet_rect;
 	int w, h;
 	left_edge = playarea.x;
 	top_edge = playarea.y;
@@ -126,17 +148,48 @@ int main(int argc, char* args[])
 	music = Mix_LoadMUS(GAME_MUSIC);
 	wall = Mix_LoadWAV(WALL_SOUND);
 	Mix_PlayMusic(music, -1);
-	tlevel_number = makeTextTexture(renderer, font, "Level: 1", text_color, bg_color);
+	sprintf_s(buffer,sizeof(buffer), "Level: %d", level);
+	tlevel_number = makeTextTexture(renderer, font, buffer, text_color, bg_color);
 	SDL_QueryTexture(tlevel_number, NULL, NULL, &w, &h);
 	level_rect.x = PLAYAREA_PADDING;
 	level_rect.y = PLAYAREA_PADDING;
 	level_rect.w = w;
 	level_rect.h = h;
 
+	sprintf_s(buffer, sizeof(buffer), "Hit Points: %d", hit_points);
+	thit_points = makeTextTexture(renderer, font, buffer, text_color, bg_color);
+	SDL_QueryTexture(thit_points, NULL, NULL, &w, &h);
+	hitpoints_rect.x = PLAYAREA_PADDING + level_rect.w + 20;
+	hitpoints_rect.y = PLAYAREA_PADDING;
+	hitpoints_rect.w = w;
+	hitpoints_rect.h = h;
+
+	tboost = makeTextTexture(renderer, font, "Boost:", text_color, bg_color);
+	SDL_QueryTexture(tboost, NULL, NULL, &w, &h);
+	boost_rect.x = hitpoints_rect.x + hitpoints_rect.w + 20;
+	boost_rect.y = PLAYAREA_PADDING;
+	boost_rect.w = w;
+	boost_rect.h = h;
+
+	boostmeter_rect.x = boost_rect.x + boost_rect.w + 5;
+	boostmeter_rect.y = PLAYAREA_PADDING;
+	boostmeter_rect.w = 206;
+	boostmeter_rect.h = boost_rect.h - 5;
+
+	boostdeplet_rect.y = boostmeter_rect.y + 3;
+	boostdeplet_rect.h = boostmeter_rect.h - 6;
+	boostdeplet_rect.x = boostmeter_rect.x; //just to initalize 
+	boostdeplet_rect.w = boostmeter_rect.w; //just to initalize 
+
 
 	playerbox.x = rand() % playarea.w + playarea.x;
 	playerbox.y = rand() % playarea.h + playarea.y;
 	
+	goalbox.x = rand() % playarea.w + playarea.x;
+	goalbox.y = rand() % playarea.h + playarea.y;
+
+	enemybox.x = rand() % playarea.w + playarea.x;
+	enemybox.y = rand() % playarea.h + playarea.y;
 
 	while (quit == 0)
 	{
@@ -152,7 +205,18 @@ int main(int argc, char* args[])
 
 		if (currentKeyStates[SDL_SCANCODE_LCTRL] || currentKeyStates[SDL_SCANCODE_RCTRL])
 		{
-			movespeed = 3;
+			if (boost_pool > 0)
+				movespeed = 3;
+
+			boost_pool = boost_pool - BOOST_DOWN;
+			if (boost_pool < 0)
+				boost_pool = 0;
+		}
+		else
+		{
+			boost_pool = boost_pool + BOOST_RECHARGE;
+			if (boost_pool > MAX_BOOST)
+				boost_pool = MAX_BOOST;
 		}
 
 		if (currentKeyStates[SDL_SCANCODE_UP] && !currentKeyStates[SDL_SCANCODE_DOWN])
@@ -195,12 +259,24 @@ int main(int argc, char* args[])
 		//clear the screen
 		SDL_SetRenderDrawColor(renderer, 0, 0, 0, SDL_ALPHA_OPAQUE);
 		SDL_RenderClear(renderer);
-		//draw all the text
+		//draw the header
 		SDL_RenderCopy(renderer, tlevel_number, NULL, &level_rect);
-		//draw all the boxes
+		SDL_RenderCopy(renderer, thit_points, NULL, &hitpoints_rect);
+		SDL_RenderCopy(renderer, tboost, NULL, &boost_rect);
+		DrawBox(renderer, &boostmeter_rect, GREEN);
+		if (boost_pool < MAX_BOOST)
+		{
+			boostdeplet_rect.w = MAX_BOOST-boost_pool;  
+			boostdeplet_rect.x = boostmeter_rect.x+boostmeter_rect.w-3-boostdeplet_rect.w; //just to initalize 
+			DrawBox(renderer, &boostdeplet_rect, BLACK);			
+		}
+		//draw playfield
 		DrawBox(renderer, &border, playercolor);
 		DrawBox(renderer, &playarea, BLACK);
-		DrawBox(renderer, &playerbox,playercolor);
+		//draw the dynamic boxes
+		DrawBox(renderer, &goalbox, BLUE);
+		DrawBox(renderer, &enemybox, ORANGE);
+		DrawBox(renderer, &playerbox, playercolor);
 		SDL_RenderPresent(renderer); //present the frame 
 	}
 
@@ -217,7 +293,7 @@ int main(int argc, char* args[])
 
 void DrawBox(SDL_Renderer *r, SDL_Rect *box, enum BoxColors color)
 {
-	//enum BoxColors {BLACK = 0, WHITE, RED, BLUE, ORANGE}
+	//enum BoxColors {BLACK = 0, WHITE, RED, BLUE, ORANGE, GREEN}
 	switch(color)
 	{
 	case WHITE:
@@ -234,6 +310,9 @@ void DrawBox(SDL_Renderer *r, SDL_Rect *box, enum BoxColors color)
 		break;
 	case ORANGE:
 		SDL_SetRenderDrawColor(r, 255, 165, 0, SDL_ALPHA_OPAQUE);
+		break;
+	case GREEN:
+		SDL_SetRenderDrawColor(r, 34, 139, 34, SDL_ALPHA_OPAQUE);
 		break;
 	default:
 		SDL_SetRenderDrawColor(r, 0, 0, 0, SDL_ALPHA_OPAQUE);
