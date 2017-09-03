@@ -5,6 +5,7 @@ An example git for learning SDL 2.0 with Visual C++ 2013
 Requires in c:\sdl2: 
 - SDL2
 - SDL_Mixer
+- SDL_TTF
 
 The following dll's must be copied to the Debug folder:
 - `SDL2.dll`
@@ -17,5 +18,5 @@ The following dll's must be copied to the Debug folder:
 Resources: 
 - `Music/Game1.mp3`
 - `Sounds/fail.wav`
-- `Fonts/RipeApricots.tff`
+- `Fonts/RipeApricots.ttf`
 
