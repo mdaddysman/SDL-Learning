@@ -11,6 +11,6 @@ The following dll's must be copied to the Debug folder:
 - `SDL2_mixer.dll`
 - `smpeg2.dll`
 
-Resources [download](https://www.dropbox.com/sh/ftjafdvig0ikr5v/AAASKASiLdkN5H1UAV4Q3ZjZa?dl=0): 
+Resources [download](https://www.dropbox.com/s/gmjd1hczqn4xr1k/experiment.zip?dl=1): 
 - `Music/Game1.mp3`
 - `Sounds/fail.wav`
