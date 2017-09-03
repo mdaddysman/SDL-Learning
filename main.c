@@ -4,8 +4,8 @@
 #include <stdlib.h>
 #include <time.h>
 
-const int SCREEN_WIDTH = 640;
-const int SCREEN_HEIGHT = 480;
+const int SCREEN_WIDTH = 800;
+const int SCREEN_HEIGHT = 600;
 
 static const char *GAME_MUSIC = "Music/Game1.mp3";
 static const char *WALL_SOUND = "Sounds/fail.wav";
@@ -31,6 +31,7 @@ int main(int argc, char* args[])
 		10,
 		10,
 	};
+	int movespeed = 1; //pixels moved per frame 
 
 	if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO) < 0)
 	{
@@ -46,7 +47,7 @@ int main(int argc, char* args[])
 		return(0);
 	}
 
-	window = SDL_CreateWindow("Example", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED,
+	window = SDL_CreateWindow("Box Game", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED,
 		SCREEN_WIDTH, SCREEN_HEIGHT, SDL_WINDOW_SHOWN);
 
 	if (window == NULL)
@@ -57,7 +58,7 @@ int main(int argc, char* args[])
 		return(0);
 	}
 
-	renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED);
+	renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC);
 	if (renderer == NULL)
 	{
 		printf("Renderer could not be created! Error: %s\n", SDL_GetError());
@@ -86,15 +87,22 @@ int main(int argc, char* args[])
 				quit = 1;
 		}
 		isedgehit = 0;
+		movespeed = 1;
 		const Uint8 *currentKeyStates = SDL_GetKeyboardState(NULL);
+
+		if (currentKeyStates[SDL_SCANCODE_LCTRL] || currentKeyStates[SDL_SCANCODE_RCTRL])
+		{
+			movespeed = 3;
+		}
+
 		if (currentKeyStates[SDL_SCANCODE_UP] && !currentKeyStates[SDL_SCANCODE_DOWN])
-			boxobj.y--;
+			boxobj.y = boxobj.y - movespeed;
 		else if (currentKeyStates[SDL_SCANCODE_DOWN] && !currentKeyStates[SDL_SCANCODE_UP])
-			boxobj.y++;
+			boxobj.y = boxobj.y + movespeed;
 		if (currentKeyStates[SDL_SCANCODE_LEFT] && !currentKeyStates[SDL_SCANCODE_RIGHT])
-			boxobj.x--;
+			boxobj.x = boxobj.x - movespeed;
 		else if (currentKeyStates[SDL_SCANCODE_RIGHT] && !currentKeyStates[SDL_SCANCODE_LEFT])
-			boxobj.x++;
+			boxobj.x = boxobj.x + movespeed;
 
 		if (boxobj.x < 1)
 		{
@@ -123,7 +131,7 @@ int main(int argc, char* args[])
 		}
 
 		DrawBox(renderer, &boxobj,isedgehit);
-		SDL_Delay(15);
+		//SDL_Delay(15);
 	}
 
 	Mix_HaltMusic();
