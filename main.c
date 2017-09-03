@@ -1,10 +1,13 @@
 #include <SDL.h>
+#include <SDL_mixer.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
 
 const int SCREEN_WIDTH = 640;
 const int SCREEN_HEIGHT = 480;
+
+static const char *GAME_MUSIC = "Music/Game1.mp3";
 
 void DrawBox(SDL_Renderer *r, SDL_Rect *box); 
 
@@ -13,7 +16,9 @@ int main(int argc, char* args[])
 	SDL_Window *window = NULL;
 	SDL_Surface *screenSurface = NULL;
 	SDL_Renderer *renderer = NULL;
+	Mix_Music *music = NULL;
 	int quit = 0;
+	int result = 0;
 	SDL_Event e;
 	int color = 1;
 	time_t t;
@@ -24,9 +29,16 @@ int main(int argc, char* args[])
 		10,
 	};
 
-	if (SDL_Init(SDL_INIT_VIDEO) < 0)
+	if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO) < 0)
 	{
 		printf("SDL could not initialize! Error: %s\n", SDL_GetError());
+		SDL_Quit();
+		return(0);
+	}
+
+	if (MIX_INIT_MP3 != (result = Mix_Init(MIX_INIT_MP3)))
+	{
+		printf("SDL Mixer could not initialize! Code: %d Error: %s\n",result, SDL_GetError());
 		SDL_Quit();
 		return(0);
 	}
@@ -37,6 +49,7 @@ int main(int argc, char* args[])
 	if (window == NULL)
 	{
 		printf("Window could not be created! Error: %s\n", SDL_GetError());
+		Mix_Quit();
 		SDL_Quit();
 		return(0);
 	}
@@ -46,11 +59,17 @@ int main(int argc, char* args[])
 	{
 		printf("Renderer could not be created! Error: %s\n", SDL_GetError());
 		SDL_DestroyWindow(window);
+		Mix_Quit();
 		SDL_Quit();
 		return(0);
 	}
 
 	srand((unsigned)time(&t));
+
+	Mix_OpenAudio(44100, MIX_DEFAULT_FORMAT, 2, 2048);
+	music = Mix_LoadMUS(GAME_MUSIC);
+	Mix_PlayMusic(music, -1);
+
 	boxobj.x = rand() % (SCREEN_WIDTH - 11) + 1;
 	boxobj.y = rand() % (SCREEN_HEIGHT - 11) + 1;
 	DrawBox(renderer, &boxobj);
@@ -86,8 +105,11 @@ int main(int argc, char* args[])
 		SDL_Delay(15);
 	}
 
+	Mix_HaltMusic();
+	Mix_FreeMusic(music);
 	SDL_DestroyRenderer(renderer);
 	SDL_DestroyWindow(window);
+	Mix_Quit();
 	SDL_Quit();
 	return(0);
 }
